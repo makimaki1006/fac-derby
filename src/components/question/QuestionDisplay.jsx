@@ -1,6 +1,9 @@
 import { useGame } from "../../hooks/useGameState";
 import { questions } from "../../data/questions";
 
+/**
+ * レースヘッダー（競馬場の出走表示風）
+ */
 export default function QuestionDisplay() {
   const { state } = useGame();
   const question = questions[state.currentQuestionIndex];
@@ -8,23 +11,21 @@ export default function QuestionDisplay() {
   if (!question) return null;
 
   return (
-    <header className="race-header" aria-label="レース情報">
-      <div className="race-header__badge">{question.label}</div>
-      <div className="race-header__info">
-        <h1 className="race-header__race-name">
-          <span className="race-header__horse">&#127943;</span>
-          {question.raceName}
-        </h1>
-        <p className="race-header__question">{question.text}</p>
+    <header className="race-banner">
+      <div className="race-banner__number">{question.label}</div>
+      <div className="race-banner__info">
+        <div className="race-banner__name">🏇 {question.raceName}</div>
+        <div className="race-banner__question">{question.text}</div>
       </div>
-      <div className="race-header__status">
-        {state.phase === "answering" && (
-          <span className="race-header__live">LIVE</span>
-        )}
-        {(state.phase === "revealing" || state.phase === "revealed") && (
-          <span className="race-header__result">RESULT</span>
-        )}
-      </div>
+      {state.phase === "answering" && (
+        <div className="race-banner__status race-banner__status--live">発売中</div>
+      )}
+      {state.phase === "closed" && (
+        <div className="race-banner__status race-banner__status--closed">締切</div>
+      )}
+      {(state.phase === "revealing" || state.phase === "revealed") && (
+        <div className="race-banner__status race-banner__status--result">確定</div>
+      )}
     </header>
   );
 }

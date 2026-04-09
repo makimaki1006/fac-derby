@@ -7,6 +7,7 @@ import { calculateScoresWithBet, getScoreDeltaWithBet } from "../utils/scoring";
 const ActionTypes = {
   START_QUESTION: "START_QUESTION",
   UPDATE_ANSWERS: "UPDATE_ANSWERS",
+  CLOSE_BETTING: "CLOSE_BETTING",
   REVEAL_ANSWER: "REVEAL_ANSWER",
   COMPLETE_REVEAL: "COMPLETE_REVEAL",
   NEXT_QUESTION: "NEXT_QUESTION",
@@ -26,7 +27,7 @@ function createInitialState(mode = "simple") {
   });
 
   return {
-    phase: "waiting", // waiting | answering | revealing | revealed | finished
+    phase: "waiting", // waiting | answering | closed | revealing | revealed | finished
     currentQuestionIndex: 0,
     teamAnswers: {},
     teamBets: {}, // BETモード用: { teamId: betAmount }
@@ -65,6 +66,10 @@ function gameReducer(state, action) {
         teamBets: teamBets || state.teamBets,
         odds: newOdds,
       };
+    }
+
+    case ActionTypes.CLOSE_BETTING: {
+      return { ...state, phase: "closed" };
     }
 
     case ActionTypes.REVEAL_ANSWER: {
@@ -212,6 +217,10 @@ export function useGame() {
     [dispatch]
   );
 
+  const closeBetting = useCallback(() => {
+    dispatch({ type: ActionTypes.CLOSE_BETTING });
+  }, [dispatch]);
+
   const revealAnswer = useCallback(
     (correctAnswer) => {
       dispatch({ type: ActionTypes.REVEAL_ANSWER, payload: { correctAnswer } });
@@ -245,6 +254,7 @@ export function useGame() {
     actions: {
       startQuestion,
       updateAnswers,
+      closeBetting,
       revealAnswer,
       completeReveal,
       nextQuestion,

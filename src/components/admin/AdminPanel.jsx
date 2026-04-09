@@ -17,76 +17,54 @@ export default function AdminPanel() {
   const currentQuestion = questions[state.currentQuestionIndex];
   const currentFormUrl = staticFormUrls[currentQuestion.id];
 
-  // モード表示ラベル
-  const modeLabel = state.mode === "bet" ? "単勝+BET" : "単勝";
-
   const phaseLabels = {
     waiting: "待機中",
-    answering: "回答受付中",
+    answering: "投票受付中",
+    closed: "投票締切",
     revealing: "結果発表中",
     revealed: "発表完了",
     finished: "ゲーム終了",
   };
 
-  const handleStart = () => {
-    actions.startQuestion();
-  };
-
-  const handleSelectAnswer = (choiceId) => {
-    setConfirming(choiceId);
-  };
-
   const handleConfirmAnswer = () => {
     actions.revealAnswer(confirming);
-    setConfirming(null);
-    setTimeout(() => {
-      actions.completeReveal();
-    }, 2000);
-  };
-
-  const handleCancelConfirm = () => {
     setConfirming(null);
   };
 
   const handleReset = async () => {
-    if (
-      window.confirm(
-        "ゲームをリセットしますか？ スコアと履歴がすべて初期化されます。"
-      )
-    ) {
+    if (window.confirm("ゲームをリセットしますか？")) {
       await resetGameAPI();
       actions.resetGame();
     }
   };
 
+  const answeredCount = Object.keys(state.teamAnswers).length;
+
   return (
     <div className="admin-panel" role="region" aria-label="管理者パネル">
       <div className="admin-panel__header">
-        <span className="admin-panel__title">Admin Panel</span>
-        {/* モード表示バッジ */}
-        <span className={`admin-panel__mode admin-panel__mode--${state.mode}`}>
-          {modeLabel}
-        </span>
+        <span className="admin-panel__title">ADMIN</span>
         <span className="admin-panel__status">
-          {isConnected() ? "🟢 GAS接続" : "🟡 モック"}
+          {isConnected() ? "GAS接続" : "モック"}
         </span>
         <span className="admin-panel__info">
-          {currentQuestion?.label || `Q.${state.currentQuestionIndex + 1}`} / {questions.length}問 --{" "}
+          {currentQuestion?.label} / {questions.length}問 —{" "}
           <span className="admin-panel__phase">
             {phaseLabels[state.phase]}
           </span>
+          {(state.phase === "answering" || state.phase === "closed") && (
+            <span className="admin-panel__vote-count">
+              {" "}({answeredCount}/19チーム投票済)
+            </span>
+          )}
         </span>
       </div>
 
-      {/* フォームURL表示 */}
+      {/* フォームURL */}
       {currentFormUrl && (
         <div className="admin-panel__form-url">
-          <span>📋 フォームURL:</span>
-          <a
-            href={currentFormUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <span>フォーム:</span>
+          <a href={currentFormUrl} target="_blank" rel="noopener noreferrer">
             {currentFormUrl}
           </a>
           <button
@@ -99,33 +77,44 @@ export default function AdminPanel() {
       )}
 
       <div className="admin-panel__controls">
+        {/* 前の問題 */}
         <button
           className="admin-panel__btn admin-panel__btn--prev"
           onClick={actions.prevQuestion}
           disabled={isFirstQuestion || state.phase !== "waiting"}
-          aria-label="前の問題に戻る"
         >
-          &#9664; 前の問題
+          ◀ 前の問題
         </button>
 
+        {/* 待機中 → 回答開始 */}
         {state.phase === "waiting" && (
           <button
             className="admin-panel__btn admin-panel__btn--start"
-            onClick={handleStart}
-            aria-label="回答を開始する"
+            onClick={actions.startQuestion}
           >
-            &#9654; 回答開始
+            ▶ 投票開始
           </button>
         )}
 
-        {state.phase === "answering" && !confirming && (
+        {/* 回答受付中 → 投票締切 */}
+        {state.phase === "answering" && (
+          <button
+            className="admin-panel__btn admin-panel__btn--close"
+            onClick={actions.closeBetting}
+          >
+            🔒 投票締切
+          </button>
+        )}
+
+        {/* 投票締切後 → 正解選択 */}
+        {state.phase === "closed" && !confirming && (
           <div className="admin-panel__answer-select">
             <span className="admin-panel__answer-label">正解を選択:</span>
             {currentQuestion.choices.map((choice) => (
               <button
                 key={choice.id}
                 className="admin-panel__btn admin-panel__btn--answer"
-                onClick={() => handleSelectAnswer(choice.id)}
+                onClick={() => setConfirming(choice.id)}
               >
                 {choice.id}
               </button>
@@ -133,6 +122,7 @@ export default function AdminPanel() {
           </div>
         )}
 
+        {/* 正解確認 */}
         {confirming && (
           <div className="admin-panel__confirm">
             <span className="admin-panel__confirm-text">
@@ -142,22 +132,22 @@ export default function AdminPanel() {
               className="admin-panel__btn admin-panel__btn--confirm-yes"
               onClick={handleConfirmAnswer}
             >
-              &#10003; 確定
+              ✓ 確定
             </button>
             <button
               className="admin-panel__btn admin-panel__btn--confirm-no"
-              onClick={handleCancelConfirm}
+              onClick={() => setConfirming(null)}
             >
-              &#10005; 取消
+              ✕ 取消
             </button>
           </div>
         )}
 
+        {/* 次の問題 or 最終結果 */}
         {isLastQuestion && state.phase === "revealed" ? (
           <button
             className="admin-panel__btn admin-panel__btn--finish"
             onClick={actions.finishGame}
-            aria-label="ゲームを終了して最終結果を表示"
           >
             🏁 最終結果へ
           </button>
@@ -166,18 +156,16 @@ export default function AdminPanel() {
             className="admin-panel__btn admin-panel__btn--next"
             onClick={actions.nextQuestion}
             disabled={isLastQuestion || state.phase !== "revealed"}
-            aria-label="次の問題へ進む"
           >
-            次の問題 &#9654;
+            次の問題 ▶
           </button>
         )}
 
         <button
           className="admin-panel__btn admin-panel__btn--reset"
           onClick={handleReset}
-          aria-label="ゲームをリセットする"
         >
-          &#128260; リセット
+          リセット
         </button>
       </div>
     </div>
