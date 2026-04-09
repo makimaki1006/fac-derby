@@ -690,4 +690,82 @@ body {
 .final-results__q-answer { font-size: 0.8rem; font-weight: 700; color: var(--green-led); }
 .final-results__q-odds { font-size: 0.8rem; font-weight: 800; color: var(--gold); }
 
+/* =============================================
+   スコアボード展開表示（結果発表後）
+   ============================================= */
+.scoreboard-full {
+  padding: 1rem 1.5rem;
+  background: var(--black-light);
+  border-top: 3px solid var(--gold);
+  animation: fadeIn 0.4s;
+}
+.scoreboard-full__title {
+  font-family: var(--font-race);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--gold);
+  margin: 0 0 0.6rem;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+.scoreboard-full__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 3px;
+}
+.scoreboard-full__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--black-panel);
+  border-radius: 3px;
+  border-left: 3px solid transparent;
+  animation: slideUp 0.3s ease backwards;
+}
+.scoreboard-full__row--1st { border-left-color: var(--gold); background: rgba(255,215,0,0.06); }
+.scoreboard-full__row--2nd { border-left-color: #aaa; }
+.scoreboard-full__row--3rd { border-left-color: #a0522d; }
+
+.scoreboard-full__rank {
+  font-family: var(--font-race);
+  font-size: 1rem;
+  font-weight: 900;
+  min-width: 2em;
+  text-align: center;
+}
+.scoreboard-full__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: #fff;
+}
+.scoreboard-full__name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-light);
+  flex: 1;
+}
+.scoreboard-full__score {
+  font-family: var(--font-race);
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--white);
+  min-width: 5em;
+  text-align: right;
+}
+.scoreboard-full__delta {
+  font-size: 0.85rem;
+  font-weight: 800;
+  min-width: 4.5em;
+  text-align: right;
+}
+.scoreboard-full__delta--plus { color: var(--green-led); }
+.scoreboard-full__delta--minus { color: var(--red); }
+
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
