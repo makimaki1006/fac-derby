@@ -1,55 +1,30 @@
 import { useGame } from "../../hooks/useGameState";
 import { questions } from "../../data/questions";
 
-/**
- * 問題文と選択肢を表示するコンポーネント
- * 正解は管理者がその場で決定するため、revealedAnswer で判定
- */
 export default function QuestionDisplay() {
   const { state } = useGame();
   const question = questions[state.currentQuestionIndex];
 
   if (!question) return null;
 
-  const isRevealed = state.phase === "revealing" || state.phase === "revealed";
-
   return (
-    <section className="question-display" aria-label="問題表示">
-      <div className="question-display__header">
-        <span
-          className="question-display__number"
-          aria-label={`第${state.currentQuestionIndex + 1}問`}
-        >
-          Q.{state.currentQuestionIndex + 1}
-        </span>
-        <h2 className="question-display__text">{question.text}</h2>
+    <header className="race-header" aria-label="レース情報">
+      <div className="race-header__badge">{question.label}</div>
+      <div className="race-header__info">
+        <h1 className="race-header__race-name">
+          <span className="race-header__horse">&#127943;</span>
+          {question.raceName}
+        </h1>
+        <p className="race-header__question">{question.text}</p>
       </div>
-
-      <div
-        className="question-display__choices"
-        role="list"
-        aria-label="選択肢一覧"
-      >
-        {question.choices.map((choice) => {
-          const isCorrect =
-            isRevealed && choice.id === state.revealedAnswer;
-          return (
-            <div
-              key={choice.id}
-              className={`question-display__choice${
-                isCorrect ? " question-display__choice--correct" : ""
-              }`}
-              role="listitem"
-              aria-label={`${choice.id}: ${choice.text}${
-                isCorrect ? " (正解)" : ""
-              }`}
-            >
-              <span className="question-display__choice-id">{choice.id}</span>
-              <span>{choice.text}</span>
-            </div>
-          );
-        })}
+      <div className="race-header__status">
+        {state.phase === "answering" && (
+          <span className="race-header__live">LIVE</span>
+        )}
+        {(state.phase === "revealing" || state.phase === "revealed") && (
+          <span className="race-header__result">RESULT</span>
+        )}
       </div>
-    </section>
+    </header>
   );
 }

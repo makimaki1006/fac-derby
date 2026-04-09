@@ -1,46 +1,44 @@
 import { useGame } from "../../hooks/useGameState";
-import { teams, questions } from "../../data/questions";
-import { getScoreDelta } from "../../utils/scoring";
-import ScoreRow from "./ScoreRow";
+import { teams } from "../../data/questions";
 
 /**
- * チームスコアをランキング順で表示するコンポーネント
+ * 横型コンパクトスコアランキング
+ * 上位はゴールド/シルバー/ブロンズ強調
+ * BETモード時は累積損益を表示
  */
 export default function Scoreboard() {
   const { state } = useGame();
-  const question = questions[state.currentQuestionIndex];
+  const isBetMode = state.mode === "bet";
 
-  // スコア降順でソート
-  const sortedTeams = [...teams].sort((a, b) => {
-    const scoreA = state.scores[a.id] || 0;
-    const scoreB = state.scores[b.id] || 0;
-    return scoreB - scoreA;
-  });
-
-  // revealed フェーズでデルタ表示
-  const showDelta = state.phase === "revealed" && question;
+  const sorted = [...teams]
+    .map((team) => ({ ...team, score: state.scores[team.id] || 0 }))
+    .sort((a, b) => b.score - a.score);
 
   return (
-    <section className="scoreboard" aria-label="スコアボード">
-      <h3 className="scoreboard__title">スコアランキング</h3>
-      <div className="scoreboard__list" role="list">
-        {sortedTeams.map((team, index) => {
-          const score = state.scores[team.id] || 0;
-          const delta = showDelta
-            ? getScoreDelta(team.id, state.teamAnswers, question.answer, state.odds)
-            : 0;
-
-          return (
-            <ScoreRow
-              key={team.id}
-              rank={index + 1}
-              team={team}
-              score={score}
-              delta={delta}
-              showDelta={!!showDelta}
-            />
-          );
-        })}
+    <section className="score-strip" aria-label="スコアランキング">
+      <span className="score-strip__label">
+        {isBetMode ? "損益" : "順位"}
+      </span>
+      <div className="score-strip__list">
+        {sorted.map((team, idx) => (
+          <div
+            key={team.id}
+            className={`score-strip__item ${idx < 3 ? `score-strip__item--top${idx + 1}` : ""}`}
+          >
+            <span className="score-strip__rank">
+              {idx === 0 ? "\uD83E\uDD47" : idx === 1 ? "\uD83E\uDD48" : idx === 2 ? "\uD83E\uDD49" : `${idx + 1}`}
+            </span>
+            <span
+              className="score-strip__chip"
+              style={{ backgroundColor: team.color }}
+            >
+              {team.name}
+            </span>
+            <span className={`score-strip__pts ${isBetMode && team.score < 0 ? "score-strip__pts--negative" : ""}`}>
+              {isBetMode && team.score > 0 ? "+" : ""}{team.score}
+            </span>
+          </div>
+        ))}
       </div>
     </section>
   );

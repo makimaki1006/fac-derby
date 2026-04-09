@@ -25,6 +25,9 @@ export default function AdminPanel() {
   const currentQuestion = questions[state.currentQuestionIndex];
   const currentFormUrl = formUrls[currentQuestion.id];
 
+  // モード表示ラベル
+  const modeLabel = state.mode === "bet" ? "単勝+BET" : "単勝";
+
   const phaseLabels = {
     waiting: "待機中",
     answering: "回答受付中",
@@ -68,11 +71,15 @@ export default function AdminPanel() {
     <div className="admin-panel" role="region" aria-label="管理者パネル">
       <div className="admin-panel__header">
         <span className="admin-panel__title">Admin Panel</span>
+        {/* モード表示バッジ */}
+        <span className={`admin-panel__mode admin-panel__mode--${state.mode}`}>
+          {modeLabel}
+        </span>
         <span className="admin-panel__status">
           {isConnected() ? "🟢 GAS接続" : "🟡 モック"}
         </span>
         <span className="admin-panel__info">
-          Q.{state.currentQuestionIndex + 1} / {questions.length} --{" "}
+          {currentQuestion?.label || `Q.${state.currentQuestionIndex + 1}`} / {questions.length}問 --{" "}
           <span className="admin-panel__phase">
             {phaseLabels[state.phase]}
           </span>

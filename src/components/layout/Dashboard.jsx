@@ -17,22 +17,34 @@ export default function Dashboard() {
   const { state, actions } = useGame();
   const currentQuestion = questions[state.currentQuestionIndex];
 
+  /**
+   * 回答ポーリング
+   * BETモード時は answers + bets の両方を取得して更新
+   */
   const pollAnswers = useCallback(async () => {
     if (state.phase !== "answering" || !currentQuestion) return;
-    const answers = await fetchTeamAnswers(
+    const result = await fetchTeamAnswers(
       currentQuestion.id,
       currentQuestion.choices,
-      teams
+      teams,
+      state.mode
     );
-    actions.updateAnswers(answers);
-  }, [state.phase, currentQuestion, actions]);
+
+    if (state.mode === "bet") {
+      // BETモード: { answers, bets } を受け取る
+      actions.updateAnswers(result.answers, result.bets);
+    } else {
+      // 単勝モード: answers のみ
+      actions.updateAnswers(result);
+    }
+  }, [state.phase, state.mode, currentQuestion, actions]);
 
   usePolling(pollAnswers, 5000, state.phase === "answering");
 
   // 最終結果画面
   if (state.phase === "finished") {
     return (
-      <div className="dashboard">
+      <div className="derby">
         <FinalResults />
         <AdminPanel />
       </div>
@@ -40,22 +52,28 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="dashboard">
+    <div className="derby">
+      {/* レースヘッダー */}
       <QuestionDisplay />
 
-      <div className="dashboard__main">
-        <OddsBoard />
-        <div className="dashboard__sidebar">
-          <TeamStatus />
-          <Scoreboard />
-        </div>
-      </div>
+      {/* チーム回答状況バー */}
+      <TeamStatus />
 
-      {/* 結果履歴 (1問以上完了後に表示) */}
+      {/* メイン: 出馬表オッズボード */}
+      <main className="derby__main">
+        <OddsBoard />
+      </main>
+
+      {/* スコアランキングバー */}
+      <Scoreboard />
+
+      {/* 結果履歴 */}
       <ResultHistory />
 
+      {/* 管理者パネル */}
       <AdminPanel />
 
+      {/* エフェクト */}
       <ConfettiEffect />
       <RevealAnimation />
     </div>

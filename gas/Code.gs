@@ -1,29 +1,30 @@
 /**
- * Quiz Odds Battle - Google Apps Script API
+ * FACダービー - Google Apps Script API
  * 1問 = 1フォーム = 1シート の構成
+ * 単勝モード / BETモード 両対応
  */
 
 // ===== 設定 =====
-var SPREADSHEET_ID = "1ONRuKUJhvuoHamicV5mgDJaFHUFpZxVSnfBRjCmmJlU";
+// ※ setupAllForms 実行後に自動設定される。手動の場合はここを編集
+var SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty("spreadsheetId") || "";
 
+// フォームのカラム名（Google Formの質問タイトルと一致させる）
 var TEAM_COLUMN = "チーム名";
-var ANSWER_COLUMN = "回答";
+var ANSWER_COLUMN_KEYWORDS = ["予想", "回答", "FY9", "時間内", "FAC1", "先に", "最速", "漢字"];
+var BET_COLUMN = "BET額";
 
-var TEAM_MAP = {
-  "チーム1": 1, "チーム2": 2, "チーム3": 3,
-  "チーム4": 4, "チーム5": 5
-};
+// チームA〜S（19チーム）
+var TEAM_IDS = "ABCDEFGHIJKLMNOPQRS".split("");
 
-// 問題データ (React側の questions.js と一致させる)
+// 問題データ（React側 questions.js と一致）
 var QUESTIONS = [
-  { id: 1, text: "日本で一番高い山は？", choices: ["A:富士山", "B:北岳", "C:奥穂高岳", "D:間ノ岳"] },
-  { id: 2, text: "太陽系で一番大きい惑星は？", choices: ["A:土星", "B:木星", "C:天王星", "D:海王星"] },
-  { id: 3, text: "日本の首都が東京に移されたのは何年？", choices: ["A:1853年", "B:1868年", "C:1872年", "D:1889年"] },
-  { id: 4, text: "水の化学式はどれ？", choices: ["A:CO2", "B:NaCl", "C:H2O", "D:O2"] },
-  { id: 5, text: "「吾輩は猫である」の作者は？", choices: ["A:芥川龍之介", "B:太宰治", "C:夏目漱石", "D:川端康成"] }
+  { id: 0, label: "例題", sheetPrefix: "Q0" },
+  { id: 1, label: "第1R", sheetPrefix: "Q1" },
+  { id: 2, label: "第2R", sheetPrefix: "Q2" },
+  { id: 3, label: "第3R", sheetPrefix: "Q3" },
+  { id: 4, label: "第4R", sheetPrefix: "Q4" },
+  { id: 5, label: "最終R", sheetPrefix: "Q5" },
 ];
-
-var TEAM_NAMES = ["チーム1", "チーム2", "チーム3", "チーム4", "チーム5"];
 
 // ===== メインハンドラ =====
 
@@ -32,9 +33,9 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
     switch (data.action) {
       case "getAnswers":
-        return jsonResponse(getAnswers(data.questionId));
+        return jsonResponse(getAnswers(data.questionId, data.mode));
       case "getFormUrls":
-        return jsonResponse(getFormUrls());
+        return jsonResponse(getFormUrls(data.mode));
       case "resetGame":
         return jsonResponse(resetGame());
       default:
@@ -48,8 +49,9 @@ function doPost(e) {
 function doGet() {
   return jsonResponse({
     status: "ok",
-    message: "Quiz Odds Battle API",
-    formUrls: getFormUrls()
+    message: "FAC Derby API",
+    questions: QUESTIONS.length,
+    teams: TEAM_IDS.length,
   });
 }
 
@@ -57,57 +59,190 @@ function doGet() {
 
 /**
  * 指定された問題の回答を取得
- * シート「Q{questionId}」から読み取る
+ * シート名は「Q{questionId}」または「Q{questionId}_bet」
+ *
+ * @param {number} questionId - 問題ID (0-5)
+ * @param {string} mode - "simple" | "bet"
+ * @returns {Object} { answers: {teamId: choiceId}, bets?: {teamId: betAmount} }
  */
-function getAnswers(questionId) {
+function getAnswers(questionId, mode) {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheetName = "Q" + questionId;
+  var suffix = (mode === "bet") ? "_bet" : "";
+  var sheetName = "Q" + questionId + suffix;
   var sheet = ss.getSheetByName(sheetName);
 
+  // シート名のバリエーションを試す
   if (!sheet) {
-    return { answers: {}, error: "Sheet '" + sheetName + "' not found" };
+    // フォーム連携で自動作成された名前を検索
+    var sheets = ss.getSheets();
+    for (var i = 0; i < sheets.length; i++) {
+      var name = sheets[i].getName();
+      if (name.indexOf("Q" + questionId) !== -1 ||
+          name.indexOf(QUESTIONS[questionId].label) !== -1) {
+        if (mode === "bet" && name.indexOf("BET") !== -1) {
+          sheet = sheets[i];
+          break;
+        } else if (mode !== "bet" && name.indexOf("BET") === -1 && name.indexOf("bet") === -1) {
+          sheet = sheets[i];
+          break;
+        }
+      }
+    }
+  }
+
+  if (!sheet) {
+    if (mode === "bet") return { answers: {}, bets: {} };
+    return { answers: {} };
   }
 
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) {
+    if (mode === "bet") return { answers: {}, bets: {} };
     return { answers: {} };
   }
 
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  var teamColIdx = headers.indexOf(TEAM_COLUMN);
-  var answerColIdx = headers.indexOf(ANSWER_COLUMN);
+
+  // チーム名カラムを検索
+  var teamColIdx = -1;
+  for (var h = 0; h < headers.length; h++) {
+    if (String(headers[h]).indexOf(TEAM_COLUMN) !== -1) {
+      teamColIdx = h;
+      break;
+    }
+  }
+
+  // 回答カラムを検索（質問タイトルがそのまま列名になるため、キーワードマッチ）
+  var answerColIdx = -1;
+  for (var h = 0; h < headers.length; h++) {
+    var headerStr = String(headers[h]);
+    // タイムスタンプとチーム名以外で、キーワードにマッチするか？
+    if (h === teamColIdx) continue;
+    if (headerStr === "タイムスタンプ" || headerStr === "Timestamp") continue;
+    if (headerStr.indexOf(BET_COLUMN) !== -1) continue;
+
+    for (var k = 0; k < ANSWER_COLUMN_KEYWORDS.length; k++) {
+      if (headerStr.indexOf(ANSWER_COLUMN_KEYWORDS[k]) !== -1) {
+        answerColIdx = h;
+        break;
+      }
+    }
+    if (answerColIdx !== -1) break;
+
+    // キーワードに一致しなくても、タイムスタンプ/チーム名/BET以外の最初の列を候補にする
+    if (answerColIdx === -1 && headerStr !== "") {
+      answerColIdx = h;
+    }
+  }
+
+  // BET額カラムを検索
+  var betColIdx = -1;
+  if (mode === "bet") {
+    for (var h = 0; h < headers.length; h++) {
+      if (String(headers[h]).indexOf(BET_COLUMN) !== -1) {
+        betColIdx = h;
+        break;
+      }
+    }
+  }
 
   if (teamColIdx === -1 || answerColIdx === -1) {
     return {
       answers: {},
-      error: "Column not found. Headers: " + headers.join(", ")
+      bets: mode === "bet" ? {} : undefined,
+      error: "Column not found. Headers: " + headers.join(", "),
     };
   }
 
   var data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
   var answers = {};
+  var bets = {};
 
   for (var i = 0; i < data.length; i++) {
-    var teamName = String(data[i][teamColIdx]).trim();
-    var answer = String(data[i][answerColIdx]).trim();
-    var teamId = TEAM_MAP[teamName];
-    if (teamId && answer) {
-      answers[teamId] = answer;
+    var teamRaw = String(data[i][teamColIdx]).trim();
+    var answerRaw = String(data[i][answerColIdx]).trim();
+
+    // チームID抽出（"A", "B", ... または "チームA" 等）
+    var teamId = extractTeamId(teamRaw);
+    if (!teamId || !answerRaw) continue;
+
+    // 回答ID抽出（"A. CyXen：上林選手" → "A"）
+    var answerId = extractAnswerId(answerRaw);
+    if (!answerId) continue;
+
+    // 同一チームが複数回回答した場合は最新（最後の行）を採用
+    answers[teamId] = answerId;
+
+    // BET額
+    if (mode === "bet" && betColIdx !== -1) {
+      var betRaw = String(data[i][betColIdx]).trim();
+      var betAmount = parseInt(betRaw, 10);
+      if (!isNaN(betAmount) && betAmount > 0) {
+        bets[teamId] = betAmount;
+      }
     }
   }
 
-  return { answers: answers };
+  var result = { answers: answers };
+  if (mode === "bet") {
+    result.bets = bets;
+  }
+  return result;
+}
+
+/**
+ * チーム名からIDを抽出
+ * "A" → "A", "チームA" → "A", "a" → "A"
+ */
+function extractTeamId(raw) {
+  var upper = raw.toUpperCase().trim();
+  // 単一文字の場合
+  if (upper.length === 1 && TEAM_IDS.indexOf(upper) !== -1) {
+    return upper;
+  }
+  // 末尾の1文字を確認
+  var last = upper.charAt(upper.length - 1);
+  if (TEAM_IDS.indexOf(last) !== -1) {
+    return last;
+  }
+  return null;
+}
+
+/**
+ * 回答文字列からChoice IDを抽出
+ * "A. CyXen：上林選手" → "A"
+ * "A" → "A"
+ * "B. 山の数がFY9にちなんで9峰になっている" → "B"
+ */
+function extractAnswerId(raw) {
+  // "A. ..." のパターン
+  var match = raw.match(/^([A-G])\s*[\.\．\:：]/);
+  if (match) return match[1];
+
+  // 単一文字
+  var upper = raw.toUpperCase().trim();
+  if (upper.length === 1 && /^[A-G]$/.test(upper)) {
+    return upper;
+  }
+
+  // 先頭文字が選択肢
+  if (/^[A-G]/.test(upper)) {
+    return upper.charAt(0);
+  }
+
+  return null;
 }
 
 /**
  * 全問題のフォームURLを返す
  */
-function getFormUrls() {
+function getFormUrls(mode) {
   var props = PropertiesService.getScriptProperties();
+  var prefix = (mode === "bet") ? "formUrl_bet_" : "formUrl_";
   var urls = {};
   for (var i = 0; i < QUESTIONS.length; i++) {
     var qId = QUESTIONS[i].id;
-    var url = props.getProperty("formUrl_" + qId);
+    var url = props.getProperty(prefix + qId);
     if (url) {
       urls[qId] = url;
     }
@@ -122,103 +257,56 @@ function resetGame() {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var cleared = [];
 
-  for (var i = 0; i < QUESTIONS.length; i++) {
-    var sheetName = "Q" + QUESTIONS[i].id;
-    var sheet = ss.getSheetByName(sheetName);
-    if (sheet && sheet.getLastRow() > 1) {
-      sheet.deleteRows(2, sheet.getLastRow() - 1);
-      cleared.push(sheetName);
+  var sheets = ss.getSheets();
+  for (var i = 0; i < sheets.length; i++) {
+    var name = sheets[i].getName();
+    // Qで始まるシートのみクリア
+    if (/^Q\d/.test(name) && sheets[i].getLastRow() > 1) {
+      sheets[i].deleteRows(2, sheets[i].getLastRow() - 1);
+      cleared.push(name);
     }
   }
 
   return { success: true, cleared: cleared };
 }
 
-// ===== セットアップ: 全フォーム一括作成 =====
+// ===== セットアップ =====
 
 /**
- * 全問題のフォームを一括作成
- * GASエディタで「setupAllForms」を選択して ▶ 実行
+ * フォームURLをScript Propertiesに登録する
+ * gws CLIで作成済みのフォームURLを紐付け
  */
-function setupAllForms() {
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+function registerFormUrls() {
   var props = PropertiesService.getScriptProperties();
 
-  Logger.log("========================================");
-  Logger.log("Quiz Odds Battle - フォーム一括作成");
-  Logger.log("========================================\n");
+  // 単勝モード
+  var simpleUrls = {
+    0: "https://docs.google.com/forms/d/e/1FAIpQLScBIw3GR6ok9CG8DbYaLY2TqsYGkl95dEaMNLmieI9hF9NBPQ/viewform",
+    1: "https://docs.google.com/forms/d/e/1FAIpQLSdx2i4XNweY1_Ahs8-XebPD3LIfEuYLgY93s6Z6sWJj6Fo1UA/viewform",
+    2: "https://docs.google.com/forms/d/e/1FAIpQLSeOLadadpn1wKSoCZjEJzYSONUqlaySLNIdviBugOFhhoYsdQ/viewform",
+    3: "https://docs.google.com/forms/d/e/1FAIpQLSdB9YGg2dQ0R1ANY7FUY-5EYOojawjNWdPif29cwpYQczynBQ/viewform",
+    4: "https://docs.google.com/forms/d/e/1FAIpQLSfZDN-13VpT8MYPydo0C78x2h_kw24BVUqkeUs4UrOyUDoCxA/viewform",
+    5: "https://docs.google.com/forms/d/e/1FAIpQLSehM-qzjFaDQZUz24HkAc-irDRO1d5KaAS1nS3HI1nQE44QNA/viewform",
+  };
 
-  for (var i = 0; i < QUESTIONS.length; i++) {
-    var q = QUESTIONS[i];
-    var sheetName = "Q" + q.id;
+  // BETモード
+  var betUrls = {
+    0: "https://docs.google.com/forms/d/e/1FAIpQLSeW64jFlcblEff-CCABOs8mhdQoQ8OiHAX8kmGOlrF2AtDSfQ/viewform",
+    1: "https://docs.google.com/forms/d/e/1FAIpQLSfdg50L24IbPoLcPD_WCdqcDguWuP6JXmCLKyL_6h0aSp6u2Q/viewform",
+    2: "https://docs.google.com/forms/d/e/1FAIpQLSfds3IDbDWHQNixL62OZtImjrcaZqiEOVLtQclwUPV9ikGeZQ/viewform",
+    3: "https://docs.google.com/forms/d/e/1FAIpQLSfgvXufbT4w7ATd5ddXKXVXOMpD8OlS_rr6c2T8DKyrRCBOtw/viewform",
+    4: "https://docs.google.com/forms/d/e/1FAIpQLSfSpP7XNFYixR0ZAW4qnHYRX6-skCUlYMxL3aDbnAobLwa-bg/viewform",
+    5: "https://docs.google.com/forms/d/e/1FAIpQLSeSqTnLYaw1KK_Zumq-LzFpxUoY45xQ-Z4nvRlKkhCbNtB99A/viewform",
+  };
 
-    // フォーム作成
-    var form = FormApp.create("Q" + q.id + ". " + q.text);
-    form.setDescription(
-      "【Q" + q.id + "】" + q.text + "\n\n" +
-      q.choices.join("\n") + "\n\n" +
-      "チーム名と回答 (A/B/C/D) を選んで送信してください。"
-    );
-    form.setConfirmationMessage("回答を送信しました！");
-    form.setAllowResponseEdits(false);
-    form.setLimitOneResponsePerUser(false);
-
-    // チーム名 (プルダウン)
-    var teamItem = form.addListItem();
-    teamItem.setTitle("チーム名");
-    teamItem.setRequired(true);
-    teamItem.setChoiceValues(TEAM_NAMES);
-
-    // 回答 (ラジオボタン)
-    var answerItem = form.addMultipleChoiceItem();
-    answerItem.setTitle("回答");
-    answerItem.setRequired(true);
-    answerItem.setChoiceValues(["A", "B", "C", "D"]);
-
-    // スプレッドシートにリンク
-    form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
-
-    // フォームが作成したシートをリネーム
-    SpreadsheetApp.flush();
-    Utilities.sleep(2000);
-
-    // 最後に追加されたシート (フォーム連携で自動作成されたもの) を探す
-    var sheets = ss.getSheets();
-    for (var j = 0; j < sheets.length; j++) {
-      var name = sheets[j].getName();
-      if (name.indexOf("フォームの回答") !== -1) {
-        // まだリネームされていないシートを見つけた
-        var alreadyRenamed = false;
-        for (var k = 0; k < QUESTIONS.length; k++) {
-          if (name === "Q" + QUESTIONS[k].id) {
-            alreadyRenamed = true;
-            break;
-          }
-        }
-        if (!alreadyRenamed) {
-          sheets[j].setName(sheetName);
-          break;
-        }
-      }
-    }
-
-    // フォームURLを保存
-    props.setProperty("formUrl_" + q.id, form.getPublishedUrl());
-
-    Logger.log("✅ Q" + q.id + " 作成完了");
-    Logger.log("   問題: " + q.text);
-    Logger.log("   フォーム: " + form.getPublishedUrl());
-    Logger.log("   シート: " + sheetName);
-    Logger.log("");
+  for (var id in simpleUrls) {
+    props.setProperty("formUrl_" + id, simpleUrls[id]);
+  }
+  for (var id in betUrls) {
+    props.setProperty("formUrl_bet_" + id, betUrls[id]);
   }
 
-  Logger.log("========================================");
-  Logger.log("✅ 全 " + QUESTIONS.length + " 問のフォーム作成完了！");
-  Logger.log("========================================");
-  Logger.log("");
-  Logger.log("👉 次のステップ:");
-  Logger.log("   デプロイ → 新しいデプロイ → ウェブアプリ → 全員 → デプロイ");
-  Logger.log("   デプロイURLを React の .env に VITE_GAS_URL として設定");
+  Logger.log("フォームURL登録完了（単勝6 + BET6 = 12フォーム）");
 }
 
 // ===== ヘルパー =====

@@ -2,6 +2,7 @@ import { createContext, useContext, useReducer, useCallback } from "react";
 import { questions, teams } from "../data/questions";
 import { calculateOdds } from "../utils/odds";
 import { calculateScores, getScoreDelta } from "../utils/scoring";
+import { calculateScoresWithBet, getScoreDeltaWithBet } from "../utils/scoring";
 
 const ActionTypes = {
   START_QUESTION: "START_QUESTION",
@@ -14,7 +15,11 @@ const ActionTypes = {
   RESET_GAME: "RESET_GAME",
 };
 
-function createInitialState() {
+/**
+ * 初期ステートを生成
+ * @param {string} mode - "simple" | "bet"
+ */
+function createInitialState(mode = "simple") {
   const initialScores = {};
   teams.forEach((team) => {
     initialScores[team.id] = 0;
@@ -24,10 +29,12 @@ function createInitialState() {
     phase: "waiting", // waiting | answering | revealing | revealed | finished
     currentQuestionIndex: 0,
     teamAnswers: {},
+    teamBets: {}, // BETモード用: { teamId: betAmount }
     scores: initialScores,
     odds: {},
     revealedAnswer: null,
     results: [],
+    mode, // "simple" | "bet"
   };
 }
 
@@ -38,20 +45,26 @@ function gameReducer(state, action) {
         ...state,
         phase: "answering",
         teamAnswers: {},
+        teamBets: {},
         odds: {},
         revealedAnswer: null,
       };
     }
 
     case ActionTypes.UPDATE_ANSWERS: {
-      const { teamAnswers } = action.payload;
+      const { teamAnswers, teamBets } = action.payload;
       const currentQuestion = questions[state.currentQuestionIndex];
       const newOdds = calculateOdds(
         currentQuestion.choices,
         teamAnswers,
         teams.length
       );
-      return { ...state, teamAnswers, odds: newOdds };
+      return {
+        ...state,
+        teamAnswers,
+        teamBets: teamBets || state.teamBets,
+        odds: newOdds,
+      };
     }
 
     case ActionTypes.REVEAL_ANSWER: {
@@ -62,17 +75,29 @@ function gameReducer(state, action) {
     case ActionTypes.COMPLETE_REVEAL: {
       const currentQuestion = questions[state.currentQuestionIndex];
       const correctAnswer = state.revealedAnswer;
-      const newScores = calculateScores(
-        state.scores, state.teamAnswers, correctAnswer, state.odds
-      );
+
+      // モードに応じたスコア計算
+      const newScores = state.mode === "bet"
+        ? calculateScoresWithBet(
+            state.scores, state.teamAnswers, state.teamBets, correctAnswer, state.odds
+          )
+        : calculateScores(
+            state.scores, state.teamAnswers, correctAnswer, state.odds
+          );
 
       const teamResults = {};
       teams.forEach((team) => {
-        const delta = getScoreDelta(
-          team.id, state.teamAnswers, correctAnswer, state.odds
-        );
+        // モードに応じたdelta計算
+        const delta = state.mode === "bet"
+          ? getScoreDeltaWithBet(
+              team.id, state.teamAnswers, state.teamBets, correctAnswer, state.odds
+            )
+          : getScoreDelta(
+              team.id, state.teamAnswers, correctAnswer, state.odds
+            );
         teamResults[team.id] = {
           answer: state.teamAnswers[team.id] || null,
+          bet: state.mode === "bet" ? (state.teamBets[team.id] || null) : null,
           delta,
           isCorrect: state.teamAnswers[team.id] === correctAnswer,
         };
@@ -80,12 +105,14 @@ function gameReducer(state, action) {
 
       const result = {
         questionIndex: state.currentQuestionIndex,
+        questionLabel: currentQuestion.label,
         questionText: currentQuestion.text,
         correctAnswer,
         correctChoiceText: currentQuestion.choices.find(
           (c) => c.id === correctAnswer
         )?.text,
         odds: { ...state.odds },
+        teamBets: state.mode === "bet" ? { ...state.teamBets } : null,
         teamResults,
       };
 
@@ -105,6 +132,7 @@ function gameReducer(state, action) {
         phase: "waiting",
         currentQuestionIndex: nextIndex,
         teamAnswers: {},
+        teamBets: {},
         odds: {},
         revealedAnswer: null,
       };
@@ -118,6 +146,7 @@ function gameReducer(state, action) {
         phase: "waiting",
         currentQuestionIndex: prevIndex,
         teamAnswers: {},
+        teamBets: {},
         odds: {},
         revealedAnswer: null,
       };
@@ -128,7 +157,7 @@ function gameReducer(state, action) {
     }
 
     case ActionTypes.RESET_GAME: {
-      return createInitialState();
+      return createInitialState(state.mode);
     }
 
     default:
@@ -138,8 +167,18 @@ function gameReducer(state, action) {
 
 const GameContext = createContext(null);
 
-export function GameProvider({ children }) {
-  const [state, dispatch] = useReducer(gameReducer, null, createInitialState);
+/**
+ * ゲーム状態プロバイダー
+ * @param {Object} props
+ * @param {string} props.mode - "simple" | "bet"
+ * @param {React.ReactNode} props.children
+ */
+export function GameProvider({ mode = "simple", children }) {
+  const [state, dispatch] = useReducer(
+    gameReducer,
+    mode,
+    createInitialState
+  );
   return (
     <GameContext.Provider value={{ state, dispatch }}>
       {children}
@@ -158,9 +197,17 @@ export function useGame() {
     dispatch({ type: ActionTypes.START_QUESTION });
   }, [dispatch]);
 
+  /**
+   * 回答を更新（BETモード時はbetsも受け取る）
+   * @param {Object} teamAnswers - { teamId: choiceId }
+   * @param {Object} [teamBets] - { teamId: betAmount } BETモード用
+   */
   const updateAnswers = useCallback(
-    (teamAnswers) => {
-      dispatch({ type: ActionTypes.UPDATE_ANSWERS, payload: { teamAnswers } });
+    (teamAnswers, teamBets) => {
+      dispatch({
+        type: ActionTypes.UPDATE_ANSWERS,
+        payload: { teamAnswers, teamBets },
+      });
     },
     [dispatch]
   );

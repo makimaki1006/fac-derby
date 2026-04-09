@@ -16,7 +16,7 @@ export default function ResultHistory() {
         {state.results.map((result, idx) => (
           <div key={idx} className="result-history__item">
             <div className="result-history__question">
-              <span className="result-history__q-num">Q.{result.questionIndex + 1}</span>
+              <span className="result-history__q-num">{result.questionLabel || `Q.${result.questionIndex + 1}`}</span>
               <span className="result-history__q-text">{result.questionText}</span>
               <span className="result-history__answer">
                 正解: {result.correctAnswer} ({result.correctChoiceText})

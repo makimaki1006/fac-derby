@@ -101,7 +101,7 @@ export default function FinalResults() {
         {state.results.map((result) => (
           <div key={result.questionIndex} className="final-results__q-row">
             <span className="final-results__q-num">
-              Q.{result.questionIndex + 1}
+              {result.questionLabel || `Q.${result.questionIndex + 1}`}
             </span>
             <span className="final-results__q-text">
               {result.questionText}

@@ -1,624 +1,560 @@
 /* =============================================
-   Quiz Odds Battle - グローバルCSS
-   競馬テーマ / ダークネイビー + ゴールド
+   FACダービー — 競馬場UI
+   ターフグリーン × ゴールド × ダークネイビー
    ============================================= */
 
 /* --- CSS変数 --- */
 :root {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-card: #0f3460;
-  --gold: #e2b714;
+  --turf: #1a3c2a;
+  --turf-dark: #122b1e;
+  --turf-light: #245038;
+  --navy: #0f1a2e;
+  --navy-light: #1a2744;
+  --gold: #d4a017;
   --gold-light: #f5d442;
-  --green: #00b894;
-  --red: #e94560;
-  --white: #eee;
-  --gray: #888;
-  --font-size-xl: clamp(2rem, 4vw, 3.5rem);
-  --font-size-lg: clamp(1.4rem, 2.5vw, 2rem);
-  --font-size-md: clamp(1rem, 1.8vw, 1.4rem);
-  --font-size-sm: clamp(0.85rem, 1.2vw, 1rem);
-  --radius: 12px;
-  --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --gold-pale: rgba(212, 160, 23, 0.15);
+  --green: #00c853;
+  --green-dim: rgba(0, 200, 83, 0.15);
+  --red: #ff3d5a;
+  --red-dim: rgba(255, 61, 90, 0.12);
+  --white: #f0f0f0;
+  --gray: #8898aa;
+  --font-xl: clamp(1.6rem, 3vw, 2.8rem);
+  --font-lg: clamp(1.2rem, 2vw, 1.8rem);
+  --font-md: clamp(0.95rem, 1.4vw, 1.2rem);
+  --font-sm: clamp(0.8rem, 1vw, 0.95rem);
+  --font-xs: clamp(0.7rem, 0.85vw, 0.82rem);
+  --radius: 8px;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
 /* --- リセット --- */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background-color: var(--bg-primary);
+  background: linear-gradient(175deg, var(--turf-dark) 0%, var(--turf) 40%, var(--navy) 100%);
   color: var(--white);
-  margin: 0;
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  line-height: 1.5;
+  line-height: 1.45;
+  min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* --- スクロールバー --- */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--bg-card);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--gold);
-}
+/* スクロールバー */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--turf-light); border-radius: 3px; }
 
 /* =============================================
-   アニメーション定義
+   アニメーション
    ============================================= */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes liveBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes glow { 0%,100% { box-shadow: 0 0 6px var(--green); } 50% { box-shadow: 0 0 20px var(--green); } }
+@keyframes revealPulse { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
 @keyframes shimmer {
-  0% {
-    background-position: -200% center;
-  }
-  100% {
-    background-position: 200% center;
-  }
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }
-
-@keyframes glow {
-  0%,
-  100% {
-    box-shadow: 0 0 8px rgba(0, 184, 148, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 24px rgba(0, 184, 148, 0.8);
-  }
-}
-
-@keyframes revealPulse {
-  0% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-  60% {
-    transform: scale(1.15);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes scorePop {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
+@keyframes scorePop { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
 /* =============================================
-   Dashboard レイアウト
+   ダービーレイアウト（縦積み・プロジェクター最適化）
    ============================================= */
-
-.dashboard {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  height: 100vh;
-  padding: 1rem;
-  gap: 1rem;
-  max-width: 1600px;
-  margin: 0 auto;
-}
-
-.dashboard__main {
-  display: grid;
-  grid-template-columns: 3fr 1fr;
-  gap: 1rem;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.dashboard__sidebar {
+.derby {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.6rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0.8rem 1rem;
+  min-height: 100vh;
+}
+
+.derby__main {
+  flex: 1;
   min-height: 0;
   overflow-y: auto;
 }
 
-/* レスポンシブ: モバイルは縦積み */
-@media (max-width: 900px) {
-  .dashboard__main {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-  }
-
-  .dashboard__sidebar {
-    flex-direction: row;
-    overflow-x: auto;
-  }
-}
-
 /* =============================================
-   QuestionDisplay - 問題表示
+   レースヘッダー
    ============================================= */
-
-.question-display {
-  background: var(--bg-secondary);
+.race-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1.2rem;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+  border-left: 4px solid var(--gold);
   border-radius: var(--radius);
-  padding: 1.5rem 2rem;
   box-shadow: var(--shadow);
   animation: fadeIn 0.4s ease;
 }
 
-.question-display__header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.question-display__number {
-  font-size: var(--font-size-lg);
-  font-weight: 800;
-  color: var(--gold);
+.race-header__badge {
+  background: var(--gold);
+  color: var(--navy);
+  font-weight: 900;
+  font-size: var(--font-lg);
+  padding: 0.3em 0.7em;
+  border-radius: 6px;
   white-space: nowrap;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
 }
 
-.question-display__text {
-  font-size: var(--font-size-lg);
-  font-weight: 600;
+.race-header__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.race-header__race-name {
+  font-size: var(--font-lg);
+  font-weight: 800;
+  color: var(--gold-light);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.race-header__horse {
+  margin-right: 0.3em;
+}
+
+.race-header__question {
+  font-size: var(--font-md);
+  color: var(--white);
+  margin-top: 0.15rem;
   line-height: 1.4;
 }
 
-.question-display__choices {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-.question-display__choice {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 1rem;
-  background: var(--bg-card);
-  border-radius: 8px;
-  border: 2px solid transparent;
-  font-size: var(--font-size-md);
-  transition: all 0.3s ease;
-}
-
-.question-display__choice-id {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2em;
-  height: 2em;
-  border-radius: 50%;
-  background: var(--bg-secondary);
-  font-weight: 700;
-  color: var(--gold);
+.race-header__status {
   flex-shrink: 0;
 }
 
-.question-display__choice--correct {
-  border-color: var(--green);
-  background: rgba(0, 184, 148, 0.15);
+.race-header__live {
+  display: inline-block;
+  background: var(--red);
+  color: #fff;
+  font-weight: 900;
+  font-size: var(--font-sm);
+  padding: 0.25em 0.8em;
+  border-radius: 4px;
+  letter-spacing: 0.15em;
+  animation: liveBlink 1s infinite;
+}
+
+.race-header__result {
+  display: inline-block;
+  background: var(--green);
+  color: #fff;
+  font-weight: 900;
+  font-size: var(--font-sm);
+  padding: 0.25em 0.8em;
+  border-radius: 4px;
+  letter-spacing: 0.1em;
+}
+
+/* =============================================
+   チーム回答バー（横型コンパクト）
+   ============================================= */
+.team-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: var(--navy);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+
+.team-bar__label {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--gray);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.team-bar__list {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: nowrap;
+}
+
+.team-bar__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 2px solid;
+  font-size: var(--font-xs);
+  font-weight: 800;
+  color: var(--gray);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.team-bar__chip--done {
+  color: #fff;
+  transform: scale(1.05);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+/* =============================================
+   出馬表オッズテーブル（メインコンテンツ）
+   ============================================= */
+.odds-table-wrap {
+  animation: fadeIn 0.4s ease;
+}
+
+.odds-table__summary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+  margin-bottom: 0.4rem;
+}
+
+.odds-table__summary-label {
+  font-size: var(--font-xs);
+  color: var(--gray);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.odds-table__summary-count {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--gold-light);
+  white-space: nowrap;
+}
+
+.odds-table__summary-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--navy);
+  border-radius: 2px;
+  overflow: hidden;
+  max-width: 200px;
+}
+
+.odds-table__summary-fill {
+  height: 100%;
+  background: var(--gold);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+/* テーブル本体 */
+.odds-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.35rem;
+}
+
+.odds-table__th {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--gold);
+  text-align: left;
+  padding: 0.3rem 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--gold-pale);
+  white-space: nowrap;
+}
+
+.odds-table__th--num { width: 3.5rem; text-align: center; }
+.odds-table__th--name { }
+.odds-table__th--odds { width: 7rem; text-align: center; }
+.odds-table__th--rank { width: 4.5rem; text-align: center; }
+.odds-table__th--votes { }
+
+.odds-table__row {
+  background: var(--navy);
+  transition: all 0.3s ease;
+}
+
+.odds-table__row:hover {
+  background: var(--navy-light);
+}
+
+.odds-table__row--correct {
+  background: var(--green-dim) !important;
   animation: glow 1.5s infinite;
 }
 
-.question-display__choice--correct .question-display__choice-id {
-  background: var(--green);
-  color: #fff;
+.odds-table__row--incorrect {
+  opacity: 0.3;
+  filter: grayscale(0.6);
 }
 
-/* =============================================
-   OddsBoard - オッズ表示エリア
-   ============================================= */
-
-.odds-board {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  padding: 0.5rem;
-  animation: fadeIn 0.5s ease;
+.odds-table__cell {
+  padding: 0.6rem;
+  vertical-align: middle;
 }
 
-/* =============================================
-   OddsCard - 個別オッズカード
-   ============================================= */
-
-.odds-card {
-  background: var(--bg-card);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  box-shadow: var(--shadow);
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
-  animation: slideUp 0.4s ease backwards;
-  position: relative;
-  overflow: hidden;
+.odds-table__cell--num {
+  text-align: center;
 }
 
-.odds-card:nth-child(1) { animation-delay: 0s; }
-.odds-card:nth-child(2) { animation-delay: 0.1s; }
-.odds-card:nth-child(3) { animation-delay: 0.2s; }
-.odds-card:nth-child(4) { animation-delay: 0.3s; }
-
-.odds-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
+.odds-table__cell--name {
+  font-size: var(--font-md);
+  font-weight: 600;
 }
 
-.odds-card__choice-id {
-  font-size: var(--font-size-lg);
-  font-weight: 800;
-  color: var(--white);
-  width: 2em;
-  height: 2em;
-  display: flex;
+.odds-table__cell--odds {
+  text-align: center;
+}
+
+.odds-table__cell--rank {
+  text-align: center;
+}
+
+/* 枠番 */
+.odds-table__frame {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: var(--bg-secondary);
-}
-
-.odds-card__rank-badge {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  padding: 0.2em 0.6em;
-  border-radius: 4px;
-  text-transform: uppercase;
-}
-
-.odds-card__text {
-  font-size: var(--font-size-md);
-  margin-bottom: 0.75rem;
-  color: var(--white);
-}
-
-.odds-card__odds {
-  font-size: var(--font-size-xl);
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 6px;
   font-weight: 900;
-  text-align: center;
-  color: var(--gold);
-  font-family: "Georgia", serif;
-}
-
-.odds-card__odds-suffix {
-  font-size: var(--font-size-md);
-  color: var(--gray);
-  margin-left: 0.25em;
-}
-
-/* --- オッズランク別スタイル --- */
-
-/* 人気 (favorite) */
-.odds-card--favorite {
-  border-color: var(--red);
-}
-
-.odds-card--favorite .odds-card__choice-id {
-  background: var(--red);
-}
-
-.odds-card--favorite .odds-card__rank-badge {
-  background: var(--red);
+  font-size: var(--font-md);
   color: #fff;
+  background: var(--navy-light);
+  border: 2px solid var(--gray);
 }
 
-/* 通常 (normal) */
-.odds-card--normal {
-  border-color: var(--bg-secondary);
-}
+/* 枠番カラー（競馬8色ベース） */
+.odds-table__frame--a { background: #fff; color: #222; border-color: #ccc; }
+.odds-table__frame--b { background: #111; border-color: #444; }
+.odds-table__frame--c { background: #e94560; border-color: #e94560; }
+.odds-table__frame--d { background: #2d6df6; border-color: #2d6df6; }
+.odds-table__frame--e { background: #e2b714; color: #222; border-color: #e2b714; }
+.odds-table__frame--f { background: #00b894; border-color: #00b894; }
+.odds-table__frame--g { background: #e17055; border-color: #e17055; }
 
-.odds-card--normal .odds-card__rank-badge {
-  background: var(--bg-secondary);
+/* オッズ値 */
+.odds-value {
+  font-size: var(--font-lg);
+  font-weight: 900;
+  font-family: "Georgia", "Times New Roman", serif;
   color: var(--white);
 }
 
-/* 大穴 (longshot) */
-.odds-card--longshot {
-  border-color: var(--gold);
+.odds-value--favorite { color: var(--red); }
+.odds-value--longshot { color: var(--gold-light); }
+
+.odds-suffix {
+  font-size: var(--font-xs);
+  color: var(--gray);
+  margin-left: 0.15em;
 }
 
-.odds-card--longshot .odds-card__choice-id {
-  background: var(--gold);
-  color: var(--bg-primary);
+/* 人気バッジ */
+.rank-badge {
+  font-size: var(--font-xs);
+  font-weight: 800;
+  padding: 0.15em 0.5em;
+  border-radius: 3px;
+  white-space: nowrap;
 }
 
-.odds-card--longshot .odds-card__rank-badge {
-  background: var(--gold);
-  color: var(--bg-primary);
+.rank-badge--favorite { background: var(--red); color: #fff; }
+.rank-badge--normal { background: var(--navy-light); color: var(--gray); }
+.rank-badge--longshot { background: var(--gold); color: var(--navy); }
+
+/* 投票チームチップ */
+.vote-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
 }
 
-.odds-card--longshot .odds-card__odds {
+.vote-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  font-size: var(--font-xs);
+  font-weight: 800;
+  color: #fff;
+  animation: fadeIn 0.3s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.vote-chips__empty {
+  color: var(--gray);
+  font-size: var(--font-xs);
+}
+
+/* BETモード: チップ横のBET額表示 */
+.vote-chip__bet {
+  display: inline-block;
+  margin-left: 0.2em;
+  font-size: 0.7em;
+  font-weight: 600;
+  color: var(--gold-light);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+  line-height: 1.2;
+}
+
+/* BETモード: 合計BET額列 */
+.odds-table__th--total-bet { width: 5.5rem; text-align: center; }
+
+.odds-table__cell--total-bet {
+  text-align: center;
+}
+
+.bet-total {
+  font-size: var(--font-sm);
+  font-weight: 800;
+  font-family: "Georgia", serif;
   color: var(--gold-light);
 }
 
-/* オッズ変動シマー */
-.odds-card--shimmer .odds-card__odds {
-  background: linear-gradient(
-    90deg,
-    var(--gold) 0%,
-    var(--gold-light) 50%,
-    var(--gold) 100%
-  );
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: shimmer 1.5s ease-in-out;
+/* =============================================
+   スコアランキングストリップ（横型）
+   ============================================= */
+.score-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: var(--navy);
+  border-radius: var(--radius);
+  overflow-x: auto;
 }
 
-/* 正解カード */
-.odds-card--correct {
-  border-color: var(--green) !important;
-  background: rgba(0, 184, 148, 0.1);
-  animation: glow 1.5s infinite;
+.score-strip__label {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--gray);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
-.odds-card--correct .odds-card__choice-id {
-  background: var(--green) !important;
+.score-strip__list {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+}
+
+.score-strip__item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.score-strip__item--top1 {
+  background: var(--gold-pale);
+  border: 1px solid var(--gold);
+}
+
+.score-strip__item--top2 {
+  background: rgba(192, 192, 192, 0.1);
+  border: 1px solid rgba(192, 192, 192, 0.3);
+}
+
+.score-strip__item--top3 {
+  background: rgba(205, 127, 50, 0.1);
+  border: 1px solid rgba(205, 127, 50, 0.3);
+}
+
+.score-strip__rank {
+  font-size: var(--font-xs);
+  font-weight: 900;
+  min-width: 1.4em;
+  text-align: center;
+}
+
+.score-strip__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  font-size: var(--font-xs);
+  font-weight: 800;
   color: #fff;
 }
 
-/* 不正解カード: グレーアウト */
-.odds-card--incorrect {
-  opacity: 0.4;
-  filter: grayscale(0.8);
-  border-color: transparent !important;
-}
-
-/* =============================================
-   TeamStatus - チーム回答状況
-   ============================================= */
-
-.team-status {
-  background: var(--bg-secondary);
-  border-radius: var(--radius);
-  padding: 1rem;
-  box-shadow: var(--shadow);
-}
-
-.team-status__title {
-  font-size: var(--font-size-md);
-  font-weight: 700;
-  margin-bottom: 0.75rem;
-  color: var(--gold);
-  border-bottom: 1px solid var(--bg-card);
-  padding-bottom: 0.5rem;
-}
-
-.team-status__list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* =============================================
-   TeamBadge - チームバッジ
-   ============================================= */
-
-.team-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  background: var(--bg-card);
-  transition: all 0.3s ease;
-  animation: slideIn 0.3s ease backwards;
-}
-
-.team-badge:nth-child(1) { animation-delay: 0s; }
-.team-badge:nth-child(2) { animation-delay: 0.05s; }
-.team-badge:nth-child(3) { animation-delay: 0.1s; }
-.team-badge:nth-child(4) { animation-delay: 0.15s; }
-.team-badge:nth-child(5) { animation-delay: 0.2s; }
-
-.team-badge__color {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.team-badge__name {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  flex: 1;
-}
-
-.team-badge__status {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  width: 2em;
-  text-align: center;
-}
-
-.team-badge__status--answered {
-  color: var(--green);
-}
-
-.team-badge__status--waiting {
-  color: var(--gray);
-}
-
-/* =============================================
-   Scoreboard - スコアボード
-   ============================================= */
-
-.scoreboard {
-  background: var(--bg-secondary);
-  border-radius: var(--radius);
-  padding: 1rem;
-  box-shadow: var(--shadow);
-  flex: 1;
-  min-height: 0;
-}
-
-.scoreboard__title {
-  font-size: var(--font-size-md);
-  font-weight: 700;
-  margin-bottom: 0.75rem;
-  color: var(--gold);
-  border-bottom: 1px solid var(--bg-card);
-  padding-bottom: 0.5rem;
-}
-
-.scoreboard__list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* =============================================
-   ScoreRow - スコア行
-   ============================================= */
-
-.score-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  background: var(--bg-card);
-  transition: all 0.4s ease;
-}
-
-.score-row__rank {
-  font-size: var(--font-size-md);
-  font-weight: 900;
-  width: 2em;
-  text-align: center;
-  color: var(--gray);
-}
-
-.score-row__rank--1 {
-  color: var(--gold);
-}
-
-.score-row__rank--2 {
-  color: #c0c0c0;
-}
-
-.score-row__rank--3 {
-  color: #cd7f32;
-}
-
-.score-row__color {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.score-row__name {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.score-row__score {
-  font-size: var(--font-size-md);
+.score-strip__pts {
+  font-size: var(--font-xs);
   font-weight: 800;
   font-family: "Georgia", serif;
   color: var(--white);
 }
 
-.score-row__delta {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  min-width: 4em;
-  text-align: right;
-  animation: scorePop 0.5s ease;
-}
-
-.score-row__delta--positive {
-  color: var(--green);
-}
-
-.score-row__delta--negative {
+/* BETモード: マイナススコア表示 */
+.score-strip__pts--negative {
   color: var(--red);
 }
 
 /* =============================================
-   AdminPanel - 管理者パネル
+   待機画面
    ============================================= */
+.waiting-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 40vh;
+  gap: 0.6rem;
+  animation: fadeIn 0.5s ease;
+}
 
+.waiting-screen__icon {
+  font-size: 4rem;
+  animation: pulse 2s infinite;
+}
+
+.waiting-screen__text {
+  font-size: var(--font-lg);
+  color: var(--gold-light);
+  font-weight: 700;
+}
+
+.waiting-screen__sub {
+  font-size: var(--font-sm);
+  color: var(--gray);
+}
+
+/* =============================================
+   AdminPanel
+   ============================================= */
 .admin-panel {
-  background: var(--bg-secondary);
+  background: var(--navy);
   border-radius: var(--radius);
-  padding: 1rem 1.5rem;
+  padding: 0.6rem 1rem;
   box-shadow: var(--shadow);
-  border: 1px solid var(--bg-card);
+  border: 1px solid var(--turf-light);
   animation: fadeIn 0.4s ease;
 }
 
@@ -626,26 +562,44 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .admin-panel__title {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-xs);
   font-weight: 700;
   color: var(--gold);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
+}
+
+.admin-panel__mode {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.admin-panel__mode--simple {
+  background: var(--turf-light);
+  color: var(--white);
+}
+
+.admin-panel__mode--bet {
+  background: var(--gold);
+  color: var(--navy);
 }
 
 .admin-panel__status {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-xs);
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.05);
 }
 
 .admin-panel__info {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-xs);
   color: var(--gray);
 }
 
@@ -656,104 +610,65 @@ body {
 
 .admin-panel__controls {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
 .admin-panel__btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
   border: none;
-  border-radius: 8px;
-  font-size: var(--font-size-sm);
+  border-radius: 6px;
+  font-size: var(--font-xs);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--white);
 }
 
-.admin-panel__btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.15);
-}
-
-.admin-panel__btn:active {
-  transform: translateY(0);
-}
-
-.admin-panel__btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-  filter: none;
-}
+.admin-panel__btn:hover { transform: translateY(-1px); filter: brightness(1.15); }
+.admin-panel__btn:active { transform: translateY(0); }
+.admin-panel__btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; filter: none; }
 
 .admin-panel__btn--prev,
-.admin-panel__btn--next {
-  background: var(--bg-card);
-}
+.admin-panel__btn--next { background: var(--turf-light); }
+.admin-panel__btn--start { background: var(--green); }
+.admin-panel__btn--reset { background: var(--red); }
 
-.admin-panel__btn--start {
-  background: var(--green);
-}
-
-.admin-panel__btn--reveal {
-  background: var(--gold);
-  color: var(--bg-primary);
-}
-
-.admin-panel__btn--reset {
-  background: var(--red);
+.admin-panel__btn--finish {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--navy);
+  font-size: var(--font-sm);
+  animation: pulse 1.5s infinite;
 }
 
 .admin-panel__form-url {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  margin-bottom: 0.75rem;
-  background: rgba(0, 184, 148, 0.1);
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.5rem;
+  background: var(--green-dim);
   border: 1px solid var(--green);
-  border-radius: 8px;
-  font-size: var(--font-size-sm);
+  border-radius: 6px;
+  font-size: var(--font-xs);
 }
 
-.admin-panel__form-url span {
-  white-space: nowrap;
-  color: var(--green);
-  font-weight: 700;
-}
-
-.admin-panel__form-url a {
-  color: var(--white);
-  text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-}
-
-.admin-panel__form-url a:hover {
-  text-decoration: underline;
-}
-
-.admin-panel__btn--copy {
-  background: var(--green);
-  font-size: 0.75rem;
-  padding: 0.3rem 0.6rem;
-  white-space: nowrap;
-}
+.admin-panel__form-url span { white-space: nowrap; color: var(--green); font-weight: 700; }
+.admin-panel__form-url a { color: var(--white); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.admin-panel__form-url a:hover { text-decoration: underline; }
+.admin-panel__btn--copy { background: var(--green); font-size: var(--font-xs); padding: 0.25rem 0.5rem; white-space: nowrap; }
 
 .admin-panel__answer-select {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .admin-panel__answer-label {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-xs);
   color: var(--gray);
   font-weight: 600;
   white-space: nowrap;
@@ -761,11 +676,11 @@ body {
 
 .admin-panel__btn--answer {
   background: var(--gold);
-  color: var(--bg-primary);
-  font-size: var(--font-size-md);
+  color: var(--navy);
+  font-size: var(--font-sm);
   font-weight: 900;
-  width: 2.8rem;
-  height: 2.8rem;
+  width: 2.4rem;
+  height: 2.4rem;
   padding: 0;
   display: flex;
   align-items: center;
@@ -773,136 +688,91 @@ body {
   border-radius: 50%;
 }
 
-.admin-panel__btn--answer:hover {
-  background: var(--gold-light);
-  transform: scale(1.15);
-}
+.admin-panel__btn--answer:hover { background: var(--gold-light); transform: scale(1.12); }
 
 .admin-panel__confirm {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.8rem;
-  background: rgba(226, 183, 20, 0.15);
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  background: var(--gold-pale);
   border: 1px solid var(--gold);
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 .admin-panel__confirm-text {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-xs);
   font-weight: 700;
   color: var(--gold-light);
   white-space: nowrap;
 }
 
-.admin-panel__btn--confirm-yes {
-  background: var(--green);
-  font-weight: 900;
-}
-
-.admin-panel__btn--confirm-no {
-  background: var(--bg-card);
-}
+.admin-panel__btn--confirm-yes { background: var(--green); font-weight: 900; }
+.admin-panel__btn--confirm-no { background: var(--turf-light); }
 
 /* =============================================
-   ResultHistory - 結果履歴
+   ResultHistory
    ============================================= */
-
 .result-history {
-  background: var(--bg-secondary);
+  background: var(--navy);
   border-radius: var(--radius);
-  padding: 1rem 1.5rem;
+  padding: 0.6rem 1rem;
   box-shadow: var(--shadow);
-  border: 1px solid var(--bg-card);
 }
 
 .result-history__title {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-xs);
   font-weight: 700;
   color: var(--gold);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.5rem;
 }
 
 .result-history__list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .result-history__item {
-  background: var(--bg-card);
-  border-radius: 8px;
-  padding: 0.6rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
 }
 
 .result-history__question {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.2rem;
 }
 
-.result-history__q-num {
-  font-weight: 800;
-  color: var(--gold);
-  font-size: var(--font-size-sm);
-}
+.result-history__q-num { font-weight: 800; color: var(--gold); font-size: var(--font-xs); }
+.result-history__q-text { font-size: var(--font-xs); color: var(--white); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.result-history__answer { font-size: var(--font-xs); font-weight: 700; color: var(--green); white-space: nowrap; }
+.result-history__odds-value { margin-left: 0.3rem; color: var(--gold); }
 
-.result-history__q-text {
-  font-size: var(--font-size-sm);
-  color: var(--white);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.result-history__answer {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: var(--green);
-  white-space: nowrap;
-}
-
-.result-history__odds-value {
-  margin-left: 0.3rem;
-  color: var(--gold);
-}
-
-.result-history__teams {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
+.result-history__teams { display: flex; gap: 0.3rem; flex-wrap: wrap; }
 
 .result-history__team {
-  font-size: 0.75rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 4px;
+  font-size: var(--font-xs);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
   white-space: nowrap;
 }
 
-.result-history__team--correct {
-  background: rgba(0, 184, 148, 0.2);
-  color: var(--green);
-}
-
-.result-history__team--wrong {
-  background: rgba(233, 69, 96, 0.15);
-  color: var(--red);
-}
+.result-history__team--correct { background: var(--green-dim); color: var(--green); }
+.result-history__team--wrong { background: var(--red-dim); color: var(--red); }
 
 /* =============================================
-   RevealAnimation - 正解発表アニメーション
+   RevealAnimation
    ============================================= */
-
 .reveal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.88);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -912,7 +782,7 @@ body {
 }
 
 .reveal-overlay__label {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-lg);
   color: var(--white);
   margin-bottom: 1rem;
   animation: fadeIn 0.5s ease;
@@ -926,7 +796,7 @@ body {
 }
 
 .reveal-overlay__answer-id {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-xl);
   font-weight: 900;
   width: 2em;
   height: 2em;
@@ -939,35 +809,14 @@ body {
 }
 
 .reveal-overlay__answer-text {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-xl);
   font-weight: 800;
   color: var(--green);
 }
 
 /* =============================================
-   WaitingScreen - 待機画面
+   FinalResults
    ============================================= */
-
-.waiting-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 1rem;
-  animation: fadeIn 0.5s ease;
-}
-
-.waiting-screen__text {
-  font-size: var(--font-size-lg);
-  color: var(--gray);
-  animation: pulse 2s infinite;
-}
-
-/* =============================================
-   FinalResults - 最終結果画面
-   ============================================= */
-
 .final-results {
   animation: fadeIn 0.5s ease;
   max-width: 1000px;
@@ -975,197 +824,89 @@ body {
   width: 100%;
 }
 
-.final-results__header {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
+.final-results__header { text-align: center; margin-bottom: 1.2rem; }
+.final-results__title { font-size: var(--font-xl); font-weight: 900; color: var(--gold); margin: 0; }
+.final-results__subtitle { font-size: var(--font-md); color: var(--gray); margin: 0.25rem 0 0; }
 
-.final-results__title {
-  font-size: var(--font-size-xl);
-  font-weight: 900;
-  color: var(--gold);
-  margin: 0;
-}
-
-.final-results__subtitle {
-  font-size: var(--font-size-md);
-  color: var(--gray);
-  margin: 0.25rem 0 0;
-}
-
-/* 優勝チーム */
 .final-results__winner {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  padding: 1.5rem 2rem;
-  margin-bottom: 1.5rem;
-  background: linear-gradient(135deg, rgba(226, 183, 20, 0.15), rgba(226, 183, 20, 0.05));
+  padding: 1.2rem 1.5rem;
+  margin-bottom: 1.2rem;
+  background: linear-gradient(135deg, var(--gold-pale), rgba(212, 160, 23, 0.05));
   border: 2px solid var(--gold);
   border-radius: var(--radius);
   animation: slideUp 0.6s ease;
 }
 
-.final-results__crown {
-  font-size: var(--font-size-xl);
-}
+.final-results__crown { font-size: var(--font-xl); }
+.final-results__winner-name { font-size: var(--font-xl); font-weight: 900; }
+.final-results__winner-score { font-size: var(--font-lg); font-weight: 800; color: var(--gold); font-family: "Georgia", serif; }
 
-.final-results__winner-name {
-  font-size: var(--font-size-xl);
-  font-weight: 900;
-}
-
-.final-results__winner-score {
-  font-size: var(--font-size-lg);
-  font-weight: 800;
-  color: var(--gold);
-  font-family: "Georgia", serif;
-}
-
-/* ランキング */
-.final-results__ranking {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
+.final-results__ranking { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.2rem; }
 
 .final-results__row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: var(--bg-card);
-  border-radius: 8px;
+  gap: 0.6rem;
+  padding: 0.55rem 0.8rem;
+  background: var(--navy);
+  border-radius: 6px;
   animation: slideUp 0.4s ease backwards;
 }
 
 .final-results__row:nth-child(1) { animation-delay: 0.1s; }
-.final-results__row:nth-child(2) { animation-delay: 0.2s; }
-.final-results__row:nth-child(3) { animation-delay: 0.3s; }
-.final-results__row:nth-child(4) { animation-delay: 0.4s; }
-.final-results__row:nth-child(5) { animation-delay: 0.5s; }
+.final-results__row:nth-child(2) { animation-delay: 0.15s; }
+.final-results__row:nth-child(3) { animation-delay: 0.2s; }
 
 .final-results__row--first {
-  background: linear-gradient(135deg, rgba(226, 183, 20, 0.2), var(--bg-card));
+  background: linear-gradient(135deg, var(--gold-pale), var(--navy));
   border: 1px solid var(--gold);
 }
 
-.final-results__rank {
-  font-size: var(--font-size-lg);
-  font-weight: 900;
-  width: 2em;
-  text-align: center;
-}
+.final-results__rank { font-size: var(--font-md); font-weight: 900; width: 2em; text-align: center; }
+.final-results__team-color { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.final-results__team-name { font-size: var(--font-sm); font-weight: 700; flex: 1; }
+.final-results__team-correct { font-size: var(--font-xs); color: var(--green); font-weight: 600; white-space: nowrap; }
+.final-results__team-score { font-size: var(--font-md); font-weight: 800; font-family: "Georgia", serif; color: var(--gold); min-width: 4em; text-align: right; }
 
-.final-results__team-color {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.final-results__team-name {
-  font-size: var(--font-size-md);
-  font-weight: 700;
-  flex: 1;
-}
-
-.final-results__team-correct {
-  font-size: var(--font-size-sm);
-  color: var(--green);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.final-results__team-score {
-  font-size: var(--font-size-lg);
-  font-weight: 800;
-  font-family: "Georgia", serif;
-  color: var(--gold);
-  min-width: 5em;
-  text-align: right;
-}
-
-/* 問題別結果サマリー */
 .final-results__summary {
-  background: var(--bg-secondary);
+  background: var(--navy);
   border-radius: var(--radius);
-  padding: 1rem 1.5rem;
+  padding: 0.8rem 1rem;
   box-shadow: var(--shadow);
 }
 
 .final-results__summary-title {
-  font-size: var(--font-size-md);
+  font-size: var(--font-sm);
   font-weight: 700;
   color: var(--gold);
-  margin: 0 0 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--bg-card);
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--gold-pale);
 }
 
 .final-results__q-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 0.6rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
-
-.final-results__q-row:last-child {
-  border-bottom: none;
-}
-
-.final-results__q-num {
-  font-weight: 800;
-  color: var(--gold);
-  font-size: var(--font-size-sm);
-  white-space: nowrap;
-}
-
-.final-results__q-text {
-  font-size: var(--font-size-sm);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.final-results__q-answer {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: var(--green);
-  white-space: nowrap;
-}
-
-.final-results__q-odds {
-  font-size: var(--font-size-sm);
-  font-weight: 800;
-  color: var(--gold);
-  white-space: nowrap;
-}
-
-/* AdminPanel 終了ボタン */
-.admin-panel__btn--finish {
-  background: linear-gradient(135deg, var(--gold), var(--gold-light));
-  color: var(--bg-primary);
-  font-size: var(--font-size-md);
-  animation: pulse 1.5s infinite;
-}
+.final-results__q-row:last-child { border-bottom: none; }
+.final-results__q-num { font-weight: 800; color: var(--gold); font-size: var(--font-xs); white-space: nowrap; }
+.final-results__q-text { font-size: var(--font-xs); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.final-results__q-answer { font-size: var(--font-xs); font-weight: 700; color: var(--green); white-space: nowrap; }
+.final-results__q-odds { font-size: var(--font-xs); font-weight: 800; color: var(--gold); white-space: nowrap; }
 
 /* =============================================
    ユーティリティ
    ============================================= */
-
 .sr-only {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+  width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border-width: 0;
 }
