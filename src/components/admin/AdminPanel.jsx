@@ -1,29 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useGame } from "../../hooks/useGameState";
 import { questions } from "../../data/questions";
-import { fetchFormUrls, resetGameAPI, isConnected } from "../../utils/api";
+import { resetGameAPI, isConnected } from "../../utils/api";
+import { formUrls as staticFormUrls } from "../../data/forms";
 
 export default function AdminPanel() {
   const { state, actions } = useGame();
   const [confirming, setConfirming] = useState(null);
-  const [formUrls, setFormUrls] = useState({});
-
   const isAdmin =
     new URLSearchParams(window.location.search).get("admin") === "true";
-
-  // 初回にフォームURLを取得
-  useEffect(() => {
-    if (isAdmin) {
-      fetchFormUrls().then(setFormUrls);
-    }
-  }, [isAdmin]);
 
   if (!isAdmin) return null;
 
   const isFirstQuestion = state.currentQuestionIndex === 0;
   const isLastQuestion = state.currentQuestionIndex >= questions.length - 1;
   const currentQuestion = questions[state.currentQuestionIndex];
-  const currentFormUrl = formUrls[currentQuestion.id];
+  const currentFormUrl = staticFormUrls[currentQuestion.id];
 
   // モード表示ラベル
   const modeLabel = state.mode === "bet" ? "単勝+BET" : "単勝";
@@ -86,8 +78,8 @@ export default function AdminPanel() {
         </span>
       </div>
 
-      {/* フォームURL表示 (回答受付中に参加者へ共有) */}
-      {currentFormUrl && state.phase === "answering" && (
+      {/* フォームURL表示 */}
+      {currentFormUrl && (
         <div className="admin-panel__form-url">
           <span>📋 フォームURL:</span>
           <a

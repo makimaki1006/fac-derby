@@ -17,27 +17,16 @@ export default function Dashboard() {
   const { state, actions } = useGame();
   const currentQuestion = questions[state.currentQuestionIndex];
 
-  /**
-   * 回答ポーリング
-   * BETモード時は answers + bets の両方を取得して更新
-   */
   const pollAnswers = useCallback(async () => {
     if (state.phase !== "answering" || !currentQuestion) return;
     const result = await fetchTeamAnswers(
       currentQuestion.id,
       currentQuestion.choices,
       teams,
-      state.mode
+      "bet"
     );
-
-    if (state.mode === "bet") {
-      // BETモード: { answers, bets } を受け取る
-      actions.updateAnswers(result.answers, result.bets);
-    } else {
-      // 単勝モード: answers のみ
-      actions.updateAnswers(result);
-    }
-  }, [state.phase, state.mode, currentQuestion, actions]);
+    actions.updateAnswers(result.answers, result.bets);
+  }, [state.phase, currentQuestion, actions]);
 
   usePolling(pollAnswers, 5000, state.phase === "answering");
 
