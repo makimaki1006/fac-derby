@@ -132,6 +132,15 @@ function gameReducer(state, action) {
     case ActionTypes.NEXT_QUESTION: {
       const nextIndex = state.currentQuestionIndex + 1;
       if (nextIndex >= questions.length) return state;
+
+      // 例題から本番に移る時はスコアと結果履歴をリセット
+      const currentQ = questions[state.currentQuestionIndex];
+      const resetScores = currentQ.isPractice;
+      const cleanScores = {};
+      if (resetScores) {
+        teams.forEach((t) => { cleanScores[t.id] = 0; });
+      }
+
       return {
         ...state,
         phase: "waiting",
@@ -140,6 +149,7 @@ function gameReducer(state, action) {
         teamBets: {},
         odds: {},
         revealedAnswer: null,
+        ...(resetScores ? { scores: cleanScores, results: [] } : {}),
       };
     }
 

@@ -6,6 +6,7 @@ export const questions = [
     id: 0,
     label: "例題",
     raceName: "パドック（練習走行）",
+    isPractice: true,
     text: "FY9の「For A-career BOOK」に施された、驚きの工夫とは？",
     choices: [
       { id: "A", text: "人のイラストが役員の人数になっている" },
