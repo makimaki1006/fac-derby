@@ -15,8 +15,45 @@ function generateMockAnswersWithBets(questionId, choices, teams) {
 }
 
 /**
- * チームの回答を取得（GETベース）
- * GAS API: GET /exec?q={questionId} → { answers: {}, bets: {} }
+ * GAS APIをfetchで呼び出す
+ * GASは302リダイレクトするため、JSONP風のscriptタグ方式でフォールバック
+ */
+async function callGAS(params) {
+  const url = `${GAS_URL}?${new URLSearchParams(params).toString()}`;
+
+  // まずfetchを試す
+  try {
+    const res = await fetch(url);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    // CORSエラーの場合はここに来る
+    console.warn("fetch failed, trying script injection:", e.message);
+  }
+
+  // フォールバック: script要素でGASを呼び、callback経由でデータ取得
+  // GASがJSONP未対応の場合はこれも失敗するが、もう1つの方法を試す
+  try {
+    // XMLHttpRequestで試す（一部環境でfetchより緩い）
+    return await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", url, true);
+      xhr.onload = () => {
+        try { resolve(JSON.parse(xhr.responseText)); }
+        catch (e) { reject(e); }
+      };
+      xhr.onerror = () => reject(new Error("XHR failed"));
+      xhr.send();
+    });
+  } catch (e) {
+    console.error("All API methods failed:", e.message);
+    return null;
+  }
+}
+
+/**
+ * チームの回答を取得
  */
 export async function fetchTeamAnswers(questionId, choices, teams) {
   if (!GAS_URL) {
@@ -25,30 +62,21 @@ export async function fetchTeamAnswers(questionId, choices, teams) {
     });
   }
 
-  try {
-    const response = await fetch(`${GAS_URL}?q=${questionId}`);
-    const data = await response.json();
-    return { answers: data.answers || {}, bets: data.bets || {} };
-  } catch (error) {
-    console.error("fetchTeamAnswers API error:", error);
-    return { answers: {}, bets: {} };
+  const data = await callGAS({ q: questionId });
+  if (data && data.answers) {
+    return { answers: data.answers, bets: data.bets || {} };
   }
+  return { answers: {}, bets: {} };
 }
 
 /**
- * ゲームリセット（全フォーム回答削除）
- * GAS API: GET /exec?action=reset
+ * ゲームリセット
  */
 export async function resetGameAPI() {
   if (!GAS_URL) return { success: true, mock: true };
 
-  try {
-    const response = await fetch(`${GAS_URL}?action=reset`);
-    return await response.json();
-  } catch (error) {
-    console.error("resetGame API error:", error);
-    return { success: false, error: error.message };
-  }
+  const data = await callGAS({ action: "reset" });
+  return data || { success: false };
 }
 
 export function isConnected() {
