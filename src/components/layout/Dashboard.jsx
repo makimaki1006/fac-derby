@@ -22,8 +22,7 @@ export default function Dashboard() {
     const result = await fetchTeamAnswers(
       currentQuestion.id,
       currentQuestion.choices,
-      teams,
-      "bet"
+      teams
     );
     actions.updateAnswers(result.answers, result.bets);
   }, [state.phase, currentQuestion, actions]);

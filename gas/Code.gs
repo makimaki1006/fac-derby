@@ -32,11 +32,19 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  // GETリクエストでも回答取得可能にする（デバッグ用）
-  var qid = (e && e.parameter && e.parameter.q) ? parseInt(e.parameter.q) : -1;
+  var params = (e && e.parameter) ? e.parameter : {};
+
+  // リセット
+  if (params.action === "reset") {
+    return jsonResponse(resetGame());
+  }
+
+  // 回答取得
+  var qid = params.q ? parseInt(params.q) : -1;
   if (qid >= 0 && qid <= 5) {
     return jsonResponse(getAnswers(qid));
   }
+
   return jsonResponse({ status: "ok", message: "FAC Derby API" });
 }
 
